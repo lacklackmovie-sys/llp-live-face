@@ -1,4 +1,4 @@
-const C = 'llp-v5';
+const C = 'llp-v4';
 const PRE = ['./', './index.html', './manifest.webmanifest', './rms-processor.js', './demo.jpg.b64', './icons/icon-192.svg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(C).then((c) => c.addAll(PRE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== C).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
