@@ -1,0 +1,30 @@
+name: Deploy GitHub Pages
+on:
+  push: { branches: [main] }
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency: { group: pages, cancel-in-progress: true }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Unpack source bundle
+        run: base64 -d bundle.tgz.b64 | tar xz
+      - run: npm ci
+      - name: Restore binary assets (icons, demo photo, MediaPipe wasm, model)
+        run: |
+          mkdir -p public/mediapipe/wasm public/models
+          cp node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_internal.* node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_nosimd_internal.* public/mediapipe/wasm/
+          curl -sfL -o public/models/face_landmarker.task https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
+          echo "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff  public/models/face_landmarker.task" | sha256sum -c
+      - run: npx vitest run
+      - run: npm run build && touch dist/.nojekyll
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
